@@ -65,7 +65,7 @@ final class NativeLibrary {
         NativeLibrary.class.getClassLoader().getResourceAsStream(jniResourceName);
     // Extract the JNI's dependency
     final String frameworkLibName =
-        maybeAdjustForMacOS(System.mapLibraryName("tensorflow_framework"));
+        maybeAdjustForMacOS(System.mapLibraryName("tensorflow_framework_noversion"));
     final String frameworkResourceName = makeResourceName(frameworkLibName);
     log("frameworkResourceName: " + frameworkResourceName);
     final InputStream frameworkResource =

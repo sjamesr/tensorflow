@@ -534,9 +534,8 @@ cc_library(
 #       as it diverges dependency topology between static and dynamic TF.
 #
 # TODO(cheshire): write tests to check for rule violations
-tf_cc_shared_object(
-    name = "tensorflow_framework",
-    framework_so = [],
+cc_library(
+    name = "tensorflow_framework_intermediate",
     linkopts = select({
         "//tensorflow:macos": [],
         "//tensorflow:windows": [],
@@ -549,8 +548,6 @@ tf_cc_shared_object(
         ],
     }),
     linkstatic = 1,
-    per_os_targets = True,
-    soversion = VERSION,
     visibility = ["//visibility:public"],
     deps = [
         "//tensorflow/cc/saved_model:loader_lite_impl",
@@ -564,6 +561,21 @@ tf_cc_shared_object(
     ] + tf_additional_binary_deps(),
 )
 
+tf_cc_shared_object(
+    name = "tensorflow_framework",
+    deps = [":tensorflow_framework_intermediate"],
+    framework_so = [],
+    soversion = VERSION,
+    per_os_targets = True,
+)
+
+tf_cc_shared_object(
+    name = "tensorflow_framework_noversion",
+    deps = [":tensorflow_framework_intermediate"],
+    framework_so = [],
+    soversion = None,
+    per_os_targets = True,
+)
 # -------------------------------------------
 # New rules should be added above this target.
 # -------------------------------------------

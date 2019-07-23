@@ -388,19 +388,23 @@ def _rpath_linkopts(name):
 
 # Bazel-generated shared objects which must be linked into TensorFlow binaries
 # to define symbols from //tensorflow/core:framework and //tensorflow/core:lib.
-def tf_binary_additional_srcs(fullversion = False):
-    if fullversion:
-        suffix = "." + VERSION
-    else:
-        suffix = "." + VERSION_MAJOR
+def tf_binary_additional_srcs(use_versioned_shared_object = True, fullversion = False):
+    name = "libtensorflow_framework_noversion"
+    suffix = ""
+    if use_versioned_shared_object:
+        name = "libtensorflow_framework"
+        if fullversion:
+            suffix = "." + VERSION
+        else:
+            suffix = "." + VERSION_MAJOR
 
     return if_static(
         extra_deps = [],
         macos = [
-            clean_dep("//tensorflow:libtensorflow_framework%s.dylib" % suffix),
+            clean_dep("//tensorflow:%s%s.dylib" % (name, suffix)),
         ],
         otherwise = [
-            clean_dep("//tensorflow:libtensorflow_framework.so%s" % suffix),
+            clean_dep("//tensorflow:%s.so%s" % (name, suffix)),
         ],
     )
 
@@ -590,6 +594,7 @@ def tf_cc_binary(
         kernels = [],
         per_os_targets = False,  # Generate targets with SHARED_LIBRARY_NAME_PATTERNS
         visibility = None,
+        use_versioned_shared_object = True,
         **kwargs):
     if kernels:
         added_data_deps = tf_binary_dynamic_kernel_dsos()
@@ -604,7 +609,7 @@ def tf_cc_binary(
         native.cc_binary(
             name = name_os,
             copts = copts,
-            srcs = srcs + tf_binary_additional_srcs(),
+            srcs = srcs + tf_binary_additional_srcs(use_versioned_shared_object),
             deps = deps + tf_binary_dynamic_kernel_deps(kernels) + if_mkl_ml(
                 [
                     clean_dep("//third_party/mkl:intel_binary_blob"),

@@ -439,6 +439,7 @@ tf_cc_binary(
         LINKER_VERSION_SCRIPT,
         LINKER_EXPORTED_SYMBOLS,
     ],
+    use_versioned_shared_object = False,
 )
 
 genrule(
