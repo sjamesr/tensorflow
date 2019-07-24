@@ -7,6 +7,7 @@ load(
     "//tensorflow:tensorflow.bzl",
     "tf_binary_additional_srcs",
     "tf_cc_binary",
+    "tf_cc_shared_object",
     "tf_cc_test",
     "tf_copts",
     "tf_custom_op_library",
@@ -413,7 +414,7 @@ LINKER_VERSION_SCRIPT = ":config/version_script.lds"
 
 LINKER_EXPORTED_SYMBOLS = ":config/exported_symbols.lds"
 
-tf_cc_binary(
+tf_cc_shared_object(
     name = "tensorflow_jni",
     # Set linker options to strip out anything except the JNI
     # symbols from the library. This reduces the size of the library
@@ -430,15 +431,22 @@ tf_cc_binary(
             "-Wl,--version-script,$(location {})".format(LINKER_VERSION_SCRIPT),
         ],
     }),
-    linkshared = 1,
-    linkstatic = 1,
     per_os_targets = True,
     deps = [
         "//tensorflow/core/distributed_runtime/rpc:grpc_server_lib",
         "//tensorflow/java/src/main/native",
         LINKER_VERSION_SCRIPT,
         LINKER_EXPORTED_SYMBOLS,
+        "//tensorflow/cc/saved_model:loader_lite_impl",
+        "//tensorflow/core:core_cpu_impl",
+        "//tensorflow/core:framework_internal_impl",
+        "//tensorflow/core:gpu_runtime_impl",
+        "//tensorflow/core/grappler/optimizers:custom_graph_optimizer_registry_impl",
+        "//tensorflow/core:lib_internal_impl",
+        "//tensorflow/stream_executor:stream_executor_impl",
+        "//tensorflow:tf_framework_version_script.lds",
     ],
+    framework_so = [],
 )
 
 genrule(

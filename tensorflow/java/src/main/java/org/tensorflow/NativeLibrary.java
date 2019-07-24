@@ -63,15 +63,6 @@ final class NativeLibrary {
     log("jniResourceName: " + jniResourceName);
     final InputStream jniResource =
         NativeLibrary.class.getClassLoader().getResourceAsStream(jniResourceName);
-    // Extract the JNI's dependency
-    final String frameworkLibName =
-        maybeAdjustForMacOS(System.mapLibraryName("tensorflow_framework"));
-    final String frameworkResourceName = makeResourceName(frameworkLibName);
-    log("frameworkResourceName: " + frameworkResourceName);
-    final InputStream frameworkResource =
-        NativeLibrary.class.getClassLoader().getResourceAsStream(frameworkResourceName);
-    // Do not complain if the framework resource wasn't found. This may just mean that we're
-    // building with --config=monolithic (in which case it's not needed and not included).
     if (jniResource == null) {
       throw new UnsatisfiedLinkError(
           String.format(
@@ -89,15 +80,6 @@ final class NativeLibrary {
       // deleted first, so that it is empty when the request is fulfilled.
       tempPath.deleteOnExit();
       final String tempDirectory = tempPath.getCanonicalPath();
-      if (frameworkResource != null) {
-        extractResource(frameworkResource, frameworkLibName, tempDirectory);
-      } else {
-        log(
-            frameworkResourceName
-                + " not found. This is fine assuming "
-                + jniResourceName
-                + " is not built to depend on it.");
-      }
       System.load(extractResource(jniResource, jniLibName, tempDirectory));
     } catch (IOException e) {
       throw new UnsatisfiedLinkError(
@@ -124,24 +106,6 @@ final class NativeLibrary {
     } catch (UnsatisfiedLinkError e) {
       return false;
     }
-  }
-
-  private static String maybeAdjustForMacOS(String libFilename) {
-    if (!System.getProperty("os.name").contains("OS X")) {
-      return libFilename;
-    }
-    // This is macOS, and the TensorFlow release process might have setup dependencies on
-    // libtensorflow_framework.so instead of libtensorflow_framework.dylib. Adjust for that.
-    final ClassLoader cl = NativeLibrary.class.getClassLoader();
-    if (cl.getResource(makeResourceName(libFilename)) != null) {
-      return libFilename;
-    }
-    // liftensorflow_framework.dylib not found, try libtensorflow_framework.so
-    final String suffix = ".dylib";
-    if (!libFilename.endsWith(suffix)) {
-      return libFilename;
-    }
-    return libFilename.substring(0, libFilename.length() - suffix.length()) + ".so";
   }
 
   private static String extractResource(
